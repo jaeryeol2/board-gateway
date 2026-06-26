@@ -31,16 +31,20 @@ public class AuthFilter extends OncePerRequestFilter {
     final String ip = this.extractClientIp(request);
     final String accessToken = this.getAccessToken(request);
 
+    log.info("api path : {}, method : {}, client ip : {}", path, method, ip);
+
     if (Objects.isNull(accessToken) || tokenUtil.isTokenExpired(accessToken)) {
       final String refreshToken = this.getRefreshToken(request);
 
       if (Objects.isNull(refreshToken) || tokenUtil.isTokenExpired(refreshToken)) {
-        throw new BusinessException("접근할 수 없습니다.");
+        final String guestId = request.getHeader("X-Guest-Id");
+
+        if (Objects.isNull(guestId) || guestId.isBlank()) {
+          throw new BusinessException("접근할 수 없습니다.");
+        }
       }
 
     }
-
-    log.info("api path : {}, method : {}, client ip : {}", path, method, ip);
 
     filterChain.doFilter(request, response);
   }
@@ -56,8 +60,13 @@ public class AuthFilter extends OncePerRequestFilter {
   }
 
   private String getAccessToken(HttpServletRequest request) {
-    String accessToken = request.getHeader(HttpHeaders.AUTHORIZATION);
-    return accessToken.replaceAll("^(?i)Bearer\\s+", "");
+    final String accessToken = request.getHeader(HttpHeaders.AUTHORIZATION);
+
+    if (Objects.nonNull(accessToken)) {
+      return accessToken.replaceAll("^(?i)Bearer\\s+", "");
+    }
+
+    return null;
   }
 
   private String getRefreshToken(HttpServletRequest request) {

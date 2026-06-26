@@ -4,12 +4,14 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -30,8 +32,8 @@ public class SecurityConfig {
   private String frontURL;
   private final AuthFilter authFilter;
 
-  private static final String[] IGNORE_PATH_ARRAY = {"/actuator/health", "/home", "/login",
-      "/logout", "/token-expire", "/auth/guest", "/user/user-count", "/signup", "/menus/**"};
+  private static final String[] IGNORE_PATH_ARRAY = {"/actuator/health", "/home", "/user/login",
+      "/user/logout", "/auth/token-expire", "/auth/guest", "/user/user-count", "/user/signup"};
 
   @Bean
   SecurityFilterChain filterChain(HttpSecurity http) {
@@ -44,15 +46,15 @@ public class SecurityConfig {
         .securityContext(context -> context
             .securityContextRepository(new RequestAttributeSecurityContextRepository()))
         .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-        .authorizeHttpRequests(auth -> {
-          auth.requestMatchers(IGNORE_PATH_ARRAY).permitAll();
-          auth.requestMatchers(HttpMethod.GET, "/board/{boardType}", "/board".concat("/0001/{id}"))//
-              .permitAll();
-
-          auth.anyRequest().authenticated();
-        });
+        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
     return http.build();
+  }
+
+  @Bean
+  public WebSecurityCustomizer webSecurityCustomizer() {
+    // 이 경로들은 스프링 시큐리티 필터 체인 자체를 건너뜁니다.
+    return web -> web.ignoring().requestMatchers(IGNORE_PATH_ARRAY);
   }
 
 
@@ -74,5 +76,14 @@ public class SecurityConfig {
     source.registerCorsConfiguration("/**", config);
 
     return source;
+  }
+
+  @Bean
+  public FilterRegistrationBean<AuthFilter> disableTomcatAuthFilter(AuthFilter filter) {
+    FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>(filter);
+    // 톰캣(서블릿 컨테이너) 자체 필터 체인에 자동으로 등록되는 것을 꺼버립니다.
+    // 이렇게 하면 오직 스프링 시큐리티 체인 내부에서만 통제됩니다!
+    registration.setEnabled(false);
+    return registration;
   }
 }

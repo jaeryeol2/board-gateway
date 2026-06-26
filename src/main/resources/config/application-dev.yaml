@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: board
+              uri: http://localhost:8000
+              predicates:
+                - Path=/api/board/**
+            - id: user
+              uri: http://localhost:8000
+              predicates:
+                - Path=/api/user/**

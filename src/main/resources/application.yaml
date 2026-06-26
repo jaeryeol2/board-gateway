@@ -1,0 +1,15 @@
+server:
+  port: 8888
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: board-gateway
+  config:
+    additional-location: classpath:/config/
+  threads:
+    virtual:
+      enabled: true
+  profiles:
+    active: local

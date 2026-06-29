@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AuthFilter extends OncePerRequestFilter {
+public class GatewayFilter extends OncePerRequestFilter {
   private final TokenUtil tokenUtil;
 
   @Override

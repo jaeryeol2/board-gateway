@@ -2,9 +2,11 @@ package com.board.gateway.zconfig.filters;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import com.board.gateway.common.base.BusinessException;
@@ -23,6 +25,11 @@ import lombok.extern.slf4j.Slf4j;
 public class GatewayFilter extends OncePerRequestFilter {
   private final TokenUtil tokenUtil;
 
+  private static final AntPathMatcher antPathMacher = new AntPathMatcher();
+  private static final List<String> IGNORE_PATH_LIST =
+      List.of("/actuator/health", "/home", "/user/login", "/user/logout", "/auth/token-expire",
+          "/auth/guest", "/user/user-count", "/user/signup");
+
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
@@ -30,8 +37,16 @@ public class GatewayFilter extends OncePerRequestFilter {
     final String method = request.getMethod();
     final String ip = this.extractClientIp(request);
     final String accessToken = this.getAccessToken(request);
+    final boolean isIgnore = IGNORE_PATH_LIST.stream().map("/api"::concat)
+        .anyMatch(pattern -> antPathMacher.match(pattern, path));
 
-    log.info("api path : {}, method : {}, client ip : {}", path, method, ip);
+    log.info("api path : {}, method : {}, client ip : {}, ignore path : {}", path, method, ip,
+        isIgnore);
+
+    if (isIgnore) {
+      filterChain.doFilter(request, response);
+      return;
+    }
 
     if (Objects.isNull(accessToken) || tokenUtil.isTokenExpired(accessToken)) {
       final String refreshToken = this.getRefreshToken(request);

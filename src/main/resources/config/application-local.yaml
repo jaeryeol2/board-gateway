@@ -8,7 +8,11 @@ spring:
               uri: http://localhost:8000
               predicates:
                 - Path=/{segment:menus|user|auth|home}/**
+              filters:
+                - RemoveRequestHeader=Origin
             - id: board
               uri: http://localhost:8000
               predicates:
                 - Path=/{segment:board|notice}/**
+              filters:
+                - RemoveRequestHeader=Origin

@@ -30,9 +30,6 @@ public class SecurityConfig {
   private String frontURL;
   private final GatewayFilter authFilter;
 
-  private static final String[] IGNORE_PATH_ARRAY = {"/actuator/health", "/home", "/user/login",
-      "/user/logout", "/auth/token-expire", "/auth/guest", "/user/user-count", "/user/signup"};
-
   @Bean
   SecurityFilterChain filterChain(HttpSecurity http) {
     http.httpBasic(basic -> basic.disable()).csrf(csrf -> csrf.disable())

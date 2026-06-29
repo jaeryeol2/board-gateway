@@ -5,12 +5,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import com.board.gateway.common.base.BusinessException;
 import com.board.gateway.common.utils.TokenUtil;
+import com.board.gateway.zconfig.entrypoint.GatewayEntryPoint;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -24,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GatewayFilter extends OncePerRequestFilter {
   private final TokenUtil tokenUtil;
+  private final GatewayEntryPoint gatewayEntryPoint;
 
   private static final AntPathMatcher antPathMacher = new AntPathMatcher();
   private static final List<String> IGNORE_PATH_LIST =
@@ -55,7 +58,14 @@ public class GatewayFilter extends OncePerRequestFilter {
         final String guestId = request.getHeader("X-Guest-Id");
 
         if (Objects.isNull(guestId) || guestId.isBlank()) {
-          throw new BusinessException("접근할 수 없습니다.");
+          try {
+            throw new BusinessException("접근할 수 없습니다.");
+          } catch (Exception e) {
+            gatewayEntryPoint.commence(request, response,
+                new AuthenticationException(e.getMessage(), e.getCause()) {});
+
+            return;
+          }
         }
       }
 

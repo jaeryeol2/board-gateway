@@ -17,6 +17,7 @@ import org.springframework.security.web.context.RequestAttributeSecurityContextR
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import com.board.gateway.zconfig.entrypoint.GatewayEntryPoint;
 import com.board.gateway.zconfig.filters.GatewayFilter;
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +29,8 @@ public class SecurityConfig {
   private String active;
   @Value("${front.url}")
   private String frontURL;
+
+  private final GatewayEntryPoint gatewayEntryPoint;
   private final GatewayFilter authFilter;
 
   @Bean
@@ -37,6 +40,7 @@ public class SecurityConfig {
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .cors(cors -> cors.configurationSource(configurationSource()))
+        .exceptionHandling(handle -> handle.authenticationEntryPoint(gatewayEntryPoint))
         .securityContext(context -> context
             .securityContextRepository(new RequestAttributeSecurityContextRepository()))
         .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)

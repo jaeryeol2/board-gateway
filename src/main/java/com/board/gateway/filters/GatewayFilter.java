@@ -1,13 +1,15 @@
-package com.board.gateway.zconfig.filters;
+package com.board.gateway.filters;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.board.gateway.common.base.BusinessException;
 import com.board.gateway.common.utils.TokenUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,8 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AuthFilter extends OncePerRequestFilter {
+public class GatewayFilter extends OncePerRequestFilter {
   private final TokenUtil tokenUtil;
+
+  private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+  private static final List<String> IGNORE_PATH_LIST =
+      List.of("/actuator/health", "/home", "/user/login", "/user/logout", "/auth/token-expire",
+          "/auth/guest", "/user/user-count", "/user/signup", "/menus/**");
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -30,20 +38,31 @@ public class AuthFilter extends OncePerRequestFilter {
     final String method = request.getMethod();
     final String ip = this.extractClientIp(request);
     final String accessToken = this.getAccessToken(request);
+    final boolean isIgnorePath = IGNORE_PATH_LIST.stream().map("/api"::concat)
+        .anyMatch(pattern -> pathMatcher.match(pattern, path));
 
-    log.info("api path : {}, method : {}, client ip : {}", path, method, ip);
+    log.info("Gateway api path : {}, method : {}, client ip : {}, ignore : {}", path, method, ip,
+        isIgnorePath);
+
+    if (isIgnorePath || "OPTIONS".equalsIgnoreCase(method)) {
+      filterChain.doFilter(request, response);
+      return;
+    }
 
     if (Objects.isNull(accessToken) || tokenUtil.isTokenExpired(accessToken)) {
-      final String refreshToken = this.getRefreshToken(request);
+      String refreshToken = this.getRefreshToken(request);
 
       if (Objects.isNull(refreshToken) || tokenUtil.isTokenExpired(refreshToken)) {
-        final String guestId = request.getHeader("X-Guest-Id");
+        String guestId = request.getHeader("X-Guest-Id");
 
         if (Objects.isNull(guestId) || guestId.isBlank()) {
-          throw new BusinessException("접근할 수 없습니다.");
+          response.setStatus(HttpStatus.UNAUTHORIZED.value());
+          response.setContentType("application/json;charset=UTF-8");
+          response.getWriter().write("접근할 수 없습니다.");
+
+          return;
         }
       }
-
     }
 
     filterChain.doFilter(request, response);

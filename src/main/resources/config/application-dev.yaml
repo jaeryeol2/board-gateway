@@ -4,11 +4,16 @@ spring:
       server:
         webmvc:
           routes:
+            - id: common
+              uri: http://localhost:8000
+              predicates:
+                - Path=/{segment:menus|user|auth|home}/**
+              filters:
+                - RemoveRequestHeader=Origin
             - id: board
               uri: http://localhost:8000
               predicates:
-                - Path=/api/board/**
-            - id: user
-              uri: http://localhost:8000
-              predicates:
-                - Path=/api/user/**
+                - Path=/{segment:board|notice}/**
+              filters:
+                - RemoveRequestHeader=Origin
+

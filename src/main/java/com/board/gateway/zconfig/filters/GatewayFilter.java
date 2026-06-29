@@ -1,21 +1,18 @@
 package com.board.gateway.zconfig.filters;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.board.gateway.common.base.BusinessException;
 import com.board.gateway.common.utils.TokenUtil;
 import com.board.gateway.zconfig.entrypoint.GatewayEntryPoint;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +28,7 @@ public class GatewayFilter extends OncePerRequestFilter {
   private static final AntPathMatcher antPathMacher = new AntPathMatcher();
   private static final List<String> IGNORE_PATH_LIST =
       List.of("/actuator/health", "/home", "/user/login", "/user/logout", "/auth/token-expire",
-          "/auth/guest", "/user/user-count", "/user/signup");
+          "/auth/access", "/auth/guest", "/user/user-count", "/user/signup");
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -52,23 +49,13 @@ public class GatewayFilter extends OncePerRequestFilter {
     }
 
     if (Objects.isNull(accessToken) || tokenUtil.isTokenExpired(accessToken)) {
-      final String refreshToken = this.getRefreshToken(request);
+      final String guestId = request.getHeader("X-Guest-Id");
 
-      if (Objects.isNull(refreshToken) || tokenUtil.isTokenExpired(refreshToken)) {
-        final String guestId = request.getHeader("X-Guest-Id");
-
-        if (Objects.isNull(guestId) || guestId.isBlank()) {
-          try {
-            throw new BusinessException("접근할 수 없습니다.");
-          } catch (Exception e) {
-            gatewayEntryPoint.commence(request, response,
-                new AuthenticationException(e.getMessage(), e.getCause()) {});
-
-            return;
-          }
-        }
+      if (Objects.isNull(guestId) || guestId.isBlank()) {
+        gatewayEntryPoint.commence(request, response,
+            new InsufficientAuthenticationException("접근할 수 없습니다."));
+        return;
       }
-
     }
 
     filterChain.doFilter(request, response);
@@ -94,23 +81,5 @@ public class GatewayFilter extends OncePerRequestFilter {
     return null;
   }
 
-  private String getRefreshToken(HttpServletRequest request) {
-    final Cookie[] cookies =
-        Objects.requireNonNullElseGet(request.getCookies(), () -> new Cookie[0]);
-    final String token = Arrays.asList(cookies).stream()//
-        .filter(Objects::nonNull)//
-        .filter(cookie -> "auth_token".equalsIgnoreCase(cookie.getName()))//
-        .findFirst()//
-        .orElseGet(() -> {
-          final Cookie cookie = new Cookie("auth_token", null);
-          cookie.setHttpOnly(true);
-          cookie.setSecure(true);
-
-          return cookie;
-        })//
-        .getValue();
-
-    return !tokenUtil.isTokenExpired(token) ? token : null;
-  }
-
 }
+

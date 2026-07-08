@@ -13,3 +13,9 @@ spring:
       enabled: true
   profiles:
     active: local
+
+front:
+  url: ${FRONT_URL}
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}

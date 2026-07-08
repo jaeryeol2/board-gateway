@@ -30,8 +30,7 @@ public class GatewayConfig {
                 .withContentInclusion(JsonInclude.Include.NON_NULL))
         // ── 역직렬화(Deserialization) ─────────────────────────
         // 알 수 없는 Enum → null 처리 (EnumFeature로 이동됨)
-        .enable(EnumFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-
+        .enable(EnumFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)//
         .build();
   }
 }

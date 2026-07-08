@@ -272,7 +272,7 @@ class ResponseApiInitializer {
   private final TaskExecutor appAsync;
 
   @PostConstruct
-  public void init() {
+  protected void init() {
     ResponseApi.setExecutor(appAsync);
   }
 }

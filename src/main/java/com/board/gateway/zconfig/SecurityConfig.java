@@ -58,8 +58,6 @@ public class SecurityConfig {
     config.setMaxAge(Duration.ofHours(1L));
     config.setAllowedOrigins(Arrays.asList(frontURL.split(",")));
     config.setAllowedHeaders(List.of(HttpHeaders.CONTENT_TYPE, HttpHeaders.AUTHORIZATION));
-
-    // 보완: 모든 REST Method 허용 (PUT, PATCH, DELETE, OPTIONS 추가)
     config.setAllowedMethods(
         List.of(HttpMethod.GET.name(), HttpMethod.POST.name(), HttpMethod.PUT.name(),
             HttpMethod.PATCH.name(), HttpMethod.DELETE.name(), HttpMethod.OPTIONS.name()));

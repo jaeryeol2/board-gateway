@@ -15,7 +15,9 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class TokenUtil {
   @Value("${jwt.secret.key}")
@@ -53,6 +55,7 @@ public class TokenUtil {
     if (!StringUtils.hasText(token)) {
       return true;
     }
+
     try {
       Jws<Claims> jws = jwtParser.parseSignedClaims(token);
       return jws.getPayload().getExpiration().before(new Date());

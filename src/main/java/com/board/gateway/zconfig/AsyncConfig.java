@@ -9,9 +9,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.task.TaskDecorator;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Configuration
 public class AsyncConfig {
 
@@ -32,8 +30,6 @@ public class AsyncConfig {
           }
 
           runnable.run();
-        } catch (Exception e) {
-          log.error("gateway async error : {}", e.getMessage());
         } finally {
           MDC.clear();
           RequestContextHolder.resetRequestAttributes();

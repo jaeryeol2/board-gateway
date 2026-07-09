@@ -49,9 +49,10 @@ public class GatewayFilter extends OncePerRequestFilter {
     }
 
     if (Objects.isNull(accessToken) || tokenUtil.isTokenExpired(accessToken)) {
-      final String guestId = request.getHeader("X-Guest-Id");
+      final String guestId =
+          Objects.requireNonNullElseGet(request.getHeader("X-Guest-Id"), () -> "");
 
-      if (Objects.isNull(guestId) || guestId.isBlank()) {
+      if (guestId.isBlank()) {
         gatewayEntryPoint.commence(request, response,
             new InsufficientAuthenticationException("접근할 수 없습니다."));
         return;

@@ -35,8 +35,8 @@ public class GatewayFilter extends OncePerRequestFilter {
       FilterChain filterChain) throws ServletException, IOException {
     final String path = request.getRequestURI();
     final String method = request.getMethod();
-    final String ip = this.extractClientIp(request);
-    final String accessToken = this.getAccessToken(request);
+    final String ip = extractClientIp(request);
+    final String accessToken = getAccessToken(request);
     final boolean isIgnore = IGNORE_PATH_LIST.stream().map("/api"::concat)
         .anyMatch(pattern -> antPathMacher.match(pattern, path));
 

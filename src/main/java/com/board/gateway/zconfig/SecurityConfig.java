@@ -25,8 +25,6 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-  @Value("${spring.profiles.active}")
-  private String active;
   @Value("${front.url}")
   private String frontURL;
 
